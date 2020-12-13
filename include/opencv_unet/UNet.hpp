@@ -8,7 +8,7 @@ class UNet
 {
 public:
     static void applyClahe(cv::Mat& inputOutput);
-    UNet(std::string const& modelFile, std::string const& weights, cv::Size inputSize, std::vector<float> thresholds, bool halfSize = false);
+    UNet(std::string const& modelFile, std::string const& weights, cv::Size inputSizeOrDownscale, std::vector<float> thresholds, bool isDownscale = false, bool halfSize = false);
 
     static auto foundBoundingBoxes(std::vector<cv::Mat> const& masks) -> std::vector<std::vector<cv::Rect>>;
     auto performPrediction(cv::Mat const& frame,
@@ -17,9 +17,11 @@ public:
                            bool isNeededToBeSwappedRAndB = true) -> std::vector<cv::Mat>;
 
 private:
-    cv::Size           _inputSize;
+    cv::Size           _inputSizeOrDownscale;
+    bool               _isDownscale;
     std::vector<float> _thresholds;
     cv::dnn::Net       _net;
     bool               _halfSize{};
+    uint32_t           _initialFilterCount{};
 };
 

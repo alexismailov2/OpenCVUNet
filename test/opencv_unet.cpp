@@ -150,30 +150,26 @@ void runOpts(std::map<std::string, std::vector<std::string>> params)
       {
         fileName.replace(fileName.size() - 3, 3, "png");
       }
-      std::cout << "1" << std::endl;
       cv::Mat frame = cv::imread(filePath);
-      //cv::Mat mask = cv::imread(params["--input"][1] + "/" + fileName);
+      cv::Mat mask = cv::imread(params["--input"][1] + "/" + fileName);
       //cv::rotate(frame, frame, cv::ROTATE_90_CLOCKWISE);
-      if (/*mask.empty() || */frame.empty() || (cv::waitKey(1) == 27))
+      if (mask.empty() || frame.empty() || (cv::waitKey(1) == 27))
       {
         continue;
       }
-      std::cout << "2" << std::endl;
       //if ((frame.cols != 1072) && (frame.cols != 1080) && (frame.cols != 1440) && (frame.cols))
       if ((frame.cols < (roi.width + roi.x)) || (frame.rows < (roi.height + roi.y)))
       {
         skippedFiles.push_back(file.path().string());
         continue;
       }
-      std::cout << "3" << std::endl;
-      frame = frame(roi);
-      std::cout << "4" << std::endl;
+      //frame = frame(roi);
       cv::Mat gray;
-      cv::cvtColor(frame, gray, cv::COLOR_RGB2GRAY);
-      //UNet::applyClahe(gray);
+      cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+      UNet::applyClahe(gray);
       auto masks = unet.performPrediction(gray, [](std::vector<cv::Mat> const&){}, true, false);
       auto boundingBoxes = UNet::foundBoundingBoxes(masks);
-      std::cout << "5" << std::endl;
+#if 0
       for (auto index = 0; index < masks.size(); ++index)
       {
 //        std::vector<std::vector<cv::Point>> contours;
@@ -229,6 +225,7 @@ void runOpts(std::map<std::string, std::vector<std::string>> params)
           //cv::imwrite(params["--output"][0] + "/images/" + fileName, frame(cropRect));
         }
       }
+#endif
 #if 0
       resultImg = frame;
       inputImg = gray;
@@ -326,11 +323,11 @@ void runOpts(std::map<std::string, std::vector<std::string>> params)
 #endif
       //cv::imwrite(params["--output"][0] + "/masks/" + fileName, mask(cropRect));
       //cv::rectangle(frame, *biggestIt, cv::Scalar{0xFF, 0xFF, 0x00}, 2);
-      std::cout << "10" << std::endl;
       cv::addWeighted(frame, 1.0, toColorMask(masks, std::vector<cv::Scalar>{cv::Scalar(0x00, 0xFF, 00)/*, cv::Scalar(0x00, 0xFF, 0x00), cv::Scalar(0x00, 0x00, 0xFF)*/}), 0.5, 0.0, frame);
+      cv::addWeighted(frame, 1.0, mask, 0.5, 0.0, frame);
+      cv::imwrite(params["--output"][0] + fileName, frame);
       //cv::resize(frame, frame, cv::Size(, 1408));
-      std::cout << "11" << std::endl;
-      video.write(frame);
+      //video.write(frame);
       imshow(kWinName, frame);
     }
     for(auto const& skippedFile :skippedFiles)

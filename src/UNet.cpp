@@ -24,22 +24,33 @@ auto toClassesMapsThreshold(cv::Mat const& score,
     cv::inRange(channelScore, threshold[ch], 1000000.0, classesMaps[ch]);
     if ((inputSize.width != 0) && (inputSize.height != 0))
     {
-       cv::resize(classesMaps[ch], classesMaps[ch], inputSize);
+       cv::resize(classesMaps[ch], classesMaps[ch], inputSize, 0, 0, cv::INTER_NEAREST);
     }
   }
   return classesMaps;
+}
+
+auto getFilterCount(cv::dnn::Net& net) -> uint32_t
+{
+    std::vector<std::vector<int>> inLayerShapes;
+    std::vector<std::vector<int>> outLayerShapes;
+    net.getLayerShapes({1, 1, 128, 128}, net.getLayerId(net.getLayerNames()[0]), inLayerShapes, outLayerShapes);
+    return outLayerShapes[0][1];
 }
 } /// end namespace anonymous
 
 UNet::UNet(std::string const& modelFile,
            std::string const& weights,
-           cv::Size inputSize,
+           cv::Size inputSizeOrDownscale,
            std::vector<float> thresholds,
+           bool isDownscale,
            bool halfSize)
-    : _inputSize{inputSize}
+    : _inputSizeOrDownscale{inputSizeOrDownscale}
+    , _isDownscale{isDownscale}
     , _thresholds{thresholds}
     , _net{weights.empty() ? cv::dnn::readNet(modelFile) : cv::dnn::readNetFromDarknet(modelFile, weights)}
     , _halfSize{halfSize}
+    , _initialFilterCount{getFilterCount(_net)}
 {
   _net.setPreferableBackend(::cv::dnn::DNN_BACKEND_CUDA);
   _net.setPreferableTarget(::cv::dnn::DNN_TARGET_CUDA);
@@ -62,7 +73,19 @@ auto UNet::performPrediction(cv::Mat const &frame,
   else
   {
      TAKEN_TIME();
-     _net.setInput(cv::dnn::blobFromImage(frame, 1.0 / 255.0, _inputSize, {0, 0, 0, 0}, isNeededToBeSwappedRAndB, false));
+     if (_isDownscale)
+     {
+         auto divisionIntegerFactor = cv::Size(_inputSizeOrDownscale.width * _initialFilterCount, _inputSizeOrDownscale.height * _initialFilterCount);
+         auto truncatedCols = frame.cols & (~(divisionIntegerFactor.width - 1));
+         auto truncatedRows = frame.rows & (~(divisionIntegerFactor.height - 1));
+         auto roi = cv::Rect{((frame.cols - truncatedCols) / 2), (frame.rows - truncatedRows) / 2, truncatedCols, truncatedRows};
+
+         _net.setInput(cv::dnn::blobFromImage(frame(roi), 1.0 / 255.0, cv::Size{truncatedCols/_inputSizeOrDownscale.width, truncatedRows/_inputSizeOrDownscale.height}, {0, 0, 0, 0}, isNeededToBeSwappedRAndB, false));
+     }
+     else
+     {
+         _net.setInput(cv::dnn::blobFromImage(frame, 1.0 / 255.0, _inputSizeOrDownscale, {0, 0, 0, 0}, isNeededToBeSwappedRAndB, false));
+     }
   }
   cv::Mat predict;
   {
