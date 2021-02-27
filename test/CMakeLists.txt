@@ -4,7 +4,7 @@ add_executable(test_${PROJECT_NAME}
         opencv_unet.cpp)
 
 set(STD_FILESYSTEM)
-if (NOT APPLE)
+if (NOT APPLE AND NOT MSVC)
     set(STD_FILESYSTEM stdc++fs)
 endif()
 

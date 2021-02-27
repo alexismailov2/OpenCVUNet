@@ -7,7 +7,6 @@
 
 #include <iostream>
 #include <vector>
-#include <experimental/filesystem>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp>
 #include <fstream>

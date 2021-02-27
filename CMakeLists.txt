@@ -22,9 +22,9 @@ set(${PROJECT_NAME}_PUBLIC_INCLUDES include/opencv_unet/UNet.hpp)
 
 add_library(${PROJECT_NAME}
         ${${PROJECT_NAME}_PUBLIC_INCLUDES}
-        src/UNet.cpp
-        src/TimeStamp.hpp
-        src/TimeStamp.cpp)
+        src/UNet.cpp)
+        #src/TimeStamp.hpp
+        #src/TimeStamp.cpp)
 
 target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS})
