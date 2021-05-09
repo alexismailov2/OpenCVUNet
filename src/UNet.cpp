@@ -34,7 +34,7 @@ auto getFilterCount(cv::dnn::Net& net) -> uint32_t
 {
     std::vector<std::vector<int>> inLayerShapes;
     std::vector<std::vector<int>> outLayerShapes;
-    net.getLayerShapes({1, 1, 128, 128}, net.getLayerId(net.getLayerNames()[0]), inLayerShapes, outLayerShapes);
+    net.getLayerShapes({1, 3, 128, 128}, net.getLayerId(net.getLayerNames()[0]), inLayerShapes, outLayerShapes);
     return outLayerShapes[0][1];
 }
 } /// end namespace anonymous
